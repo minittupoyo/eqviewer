@@ -3,10 +3,14 @@
 // 出力: public/map/<name>.pack(gzip済みタイルの連結)と <name>.pack.json({"z/x/y":[offset,length]})
 import geojsonvt from "geojson-vt";
 import { fromGeojsonVt } from "vt-pbf";
+import earcut, { deviation } from "earcut";
 import { gzipSync } from "node:zlib";
 import { readFileSync, writeFileSync } from "node:fs";
 
 const MAX_ZOOM = 10;
+// 簡略化の強さ。タイルごとに、塗りの三角形分割が破綻しないものを順に試す。
+// (簡略化・クリップで輪が自己交差すると MapLibre の earcut が失敗し、その地域の塗りが消える)
+const TOLERANCES = [6, 0, 2, 12, 24];
 // 描画と震度の対応づけに使う属性だけ残す
 const KEEP: Record<string, string[]> = { "jp-city": ["regioncode"], "jp-pref": [], "jp-area": ["name"] };
 
@@ -14,7 +18,9 @@ for (const [name, keep] of Object.entries(KEEP)) {
   const src = JSON.parse(readFileSync(`public/map/${name}.geojson`, "utf8"));
   for (const f of src.features) f.properties = Object.fromEntries(keep.map((k) => [k, f.properties[k]]));
   const layer = name.slice(3);
-  const index = new (geojsonvt as any)(src, { maxZoom: MAX_ZOOM, indexMaxZoom: MAX_ZOOM, indexMaxPoints: 0, tolerance: 2, buffer: 64 });
+  const indexes = TOLERANCES.map(
+    (tolerance) => new (geojsonvt as any)(src, { maxZoom: MAX_ZOOM, indexMaxZoom: MAX_ZOOM, indexMaxPoints: 0, tolerance, buffer: 128, extent: 8192 }),
+  );
   const chunks: Buffer[] = [];
   const toc: Record<string, [number, number]> = {};
   let offset = 0;
@@ -28,9 +34,9 @@ for (const [name, keep] of Object.entries(KEEP)) {
   for (let z = 0; z <= MAX_ZOOM; z++)
     for (let x = tx(w, z); x <= tx(e, z); x++) for (let y = ty(n, z); y <= ty(south, z); y++) coords.push([z, x, y]);
   for (const [z, x, y] of coords) {
-    const tile = index.getTile(z, x, y);
+    const tile = pickTile(indexes, z, x, y);
     if (!tile || !tile.features.length) continue;
-    const buf = gzipSync(Buffer.from(fromGeojsonVt({ [layer]: tile }, { version: 2 })));
+    const buf = gzipSync(Buffer.from(fromGeojsonVt({ [layer]: tile }, { version: 2, extent: 8192 })));
     toc[`${z}/${x}/${y}`] = [offset, buf.length];
     chunks.push(buf);
     offset += buf.length;
@@ -49,4 +55,51 @@ function bboxOf(fc: any): [number, number, number, number] {
   };
   for (const f of fc.features) visit(f.geometry.coordinates);
   return b;
+}
+
+function signedArea(r: number[][]) {
+  let a = 0;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += (r[j][0] - r[i][0]) * (r[i][1] + r[j][1]);
+  return a;
+}
+
+/** 塗りの三角形分割のずれ(最悪値)。0に近いほど正しく塗れる。 */
+function fillError(tile: any) {
+  let worst = 0;
+  for (const f of tile.features) {
+    if (f.type !== 3) continue;
+    const polys: number[][][][] = [];
+    let outer = 0;
+    for (const ring of f.geometry) {
+      const a = signedArea(ring);
+      if (!a) continue;
+      if (!polys.length || Math.sign(a) === outer) {
+        outer = Math.sign(a);
+        polys.push([ring]);
+      } else polys[polys.length - 1].push(ring);
+    }
+    for (const p of polys) {
+      const flat: number[] = [];
+      const holes: number[] = [];
+      p.forEach((r, i) => {
+        if (i) holes.push(flat.length / 2);
+        for (const [px, py] of r) flat.push(px, py);
+      });
+      worst = Math.max(worst, deviation(flat, holes, 2, earcut(flat, holes)));
+    }
+  }
+  return worst;
+}
+
+function pickTile(indexes: any[], z: number, x: number, y: number) {
+  let best: any = null;
+  let bestErr = Infinity;
+  for (const index of indexes) {
+    const tile = index.getTile(z, x, y);
+    if (!tile || !tile.features.length) return tile;
+    const err = fillError(tile);
+    if (err < 1e-3) return tile;
+    if (err < bestErr) [best, bestErr] = [tile, err];
+  }
+  return best;
 }
