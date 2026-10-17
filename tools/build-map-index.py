@@ -2,12 +2,14 @@
 """市町村・震度速報地域の外接矩形だけを持つ軽量インデックスを作る。
 
 画面側は震度の対応づけと表示範囲の計算にしか形を使わないので、
-本体(jp-city/jp-area.geojson)を読まずにこのインデックスで済ませる。
+形の本体(tools/map-src/jp-city/jp-area.geojson)は事前タイル化してあるので、本体を読まずにこのインデックスで済ませる。
 """
 import json
 from pathlib import Path
 
-MAP = Path(__file__).resolve().parent.parent / "public" / "map"
+ROOT = Path(__file__).resolve().parent.parent
+SRC = ROOT / "tools" / "map-src"
+MAP = ROOT / "public" / "map"
 
 
 def bbox(coords):
@@ -26,7 +28,7 @@ def bbox(coords):
 
 
 for name in ("jp-city", "jp-area"):
-    src = json.loads((MAP / f"{name}.geojson").read_text())
+    src = json.loads((SRC / f"{name}.geojson").read_text())
     feats = []
     for f in src["features"]:
         w, s, e, n = bbox(f["geometry"]["coordinates"])

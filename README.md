@@ -78,7 +78,7 @@ WindowsとmacOS向けの配布物は、GitHub Actionsでも作れます。
 
 | 内容 | コマンド |
 |---|---|
-| 地図データ(`public/map/`) | `tools/build-map.sh <作業ディレクトリ>` |
+| 地図データ(`public/map/`、`tools/map-src/`) | `tools/build-map.sh <作業ディレクトリ>`(タイル化まで行う) |
 | 強震モニタの観測点表 | `python tools/build-kmoni-points.py <intensity-points.json>` |
 | 強震モニタの色→震度の変換表 | `uv run --with pillow python tools/build-kmoni-scale.py <凡例gif>` |
 | ライセンス一覧(依存を変えたとき) | `bun run licenses` |

@@ -1,4 +1,4 @@
-// jp-city / jp-pref / jp-area の GeoJSON を事前にベクタタイル化し、1ファイルにまとめる。
+// tools/map-src の jp-city / jp-pref / jp-area の GeoJSON を事前にベクタタイル化し、1ファイルにまとめる。
 // 実行: bun tools/build-tiles.ts
 // 出力: public/map/<name>.pack(gzip済みタイルの連結)と <name>.pack.json({"z/x/y":[offset,length]})
 import geojsonvt from "geojson-vt";
@@ -18,7 +18,7 @@ const SMALL = 5; // TOLERANCES のうち小さい値の数
 const KEEP: Record<string, string[]> = { "jp-city": ["regioncode"], "jp-pref": [], "jp-area": ["name"] };
 
 for (const [name, keep] of Object.entries(KEEP)) {
-  const src = JSON.parse(readFileSync(`public/map/${name}.geojson`, "utf8"));
+  const src = JSON.parse(readFileSync(`tools/map-src/${name}.geojson`, "utf8"));
   for (const f of src.features) f.properties = Object.fromEntries(keep.map((k) => [k, f.properties[k]]));
   const layer = name.slice(3);
   const indexes = TOLERANCES.map(
