@@ -1,0 +1,74 @@
+name: Release
+
+# バージョンのタグ(例: v0.1.0)を push すると、Windows と macOS の配布物を作り、
+# 下書き(draft)のリリースとして添付する。内容を確認してから公開する。
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+            rust_targets: ""
+            tauri_args: --bundles nsis
+          - name: macos
+            os: macos-latest
+            # Apple Silicon と Intel の両方で動くユニバーサルバイナリにする
+            rust_targets: aarch64-apple-darwin,x86_64-apple-darwin
+            tauri_args: --target universal-apple-darwin --bundles dmg
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # タグとアプリのバージョンが食い違ったまま配布しない
+      - name: Check tag matches app version
+        shell: bash
+        run: |
+          app=$(jq -r .version src-tauri/tauri.conf.json)
+          pkg=$(jq -r .version package.json)
+          crate=$(grep -m1 '^version' src-tauri/Cargo.toml | sed 's/.*"\(.*\)"/\1/')
+          echo "tag=${GITHUB_REF_NAME} tauri.conf.json=$app package.json=$pkg Cargo.toml=$crate"
+          [ "${GITHUB_REF_NAME}" = "v$app" ] && [ "$app" = "$pkg" ] && [ "$app" = "$crate" ]
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_targets }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: bun install --frozen-lockfile
+
+      - run: bun run build
+      - run: bun run test
+
+      # 署名はしない。ビルドしてリリースに添付する
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tauriScript: bun tauri
+          args: ${{ matrix.tauri_args }}
+          tagName: ${{ github.ref_name }}
+          releaseName: EQViewer ${{ github.ref_name }}
+          releaseBody: |
+            未署名のビルドです。
+            - Windows: SmartScreen の警告が出たら「詳細情報」→「実行」。
+            - macOS: 初回は右クリック→「開く」(または システム設定 → プライバシーとセキュリティ で許可)。
+
+            本アプリは非公式の参考情報を表示します。公式の警報ではありません。
+          releaseDraft: true
+          prerelease: false
