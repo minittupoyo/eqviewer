@@ -38,10 +38,13 @@ onMounted(() => {
         :class="kmoni.viewing ? 'grid-cols-1' : 'grid-cols-[22rem_1fr]'"
       >
         <aside v-if="!kmoni.viewing" class="min-h-0 border-r"><EarthquakeList /></aside>
-        <EewMap v-if="eew.showMap" />
-        <KmoniMap v-else-if="kmoni.viewing" />
-        <EarthquakeDetail v-else-if="store.selected" :eq="store.selected" />
-        <p v-else class="p-4 text-sm text-muted-foreground">履歴を取得しています…</p>
+        <!-- 地図は切り替えのたびに作り直さず保持する(日本の形の読み込みが重いため) -->
+        <KeepAlive>
+          <EewMap v-if="eew.showMap" />
+          <KmoniMap v-else-if="kmoni.viewing" />
+          <EarthquakeDetail v-else-if="store.selected" :eq="store.selected" />
+        </KeepAlive>
+        <p v-if="!eew.showMap && !kmoni.viewing && !store.selected" class="p-4 text-sm text-muted-foreground">履歴を取得しています…</p>
       </main>
     </div>
     <StatusBar />
