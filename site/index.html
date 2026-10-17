@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EQViewer</title>
+<meta name="description" content="緊急地震速報・地震履歴・強震モニタを、ひとつの画面で確認できるデスクトップアプリ。Windows / macOS 対応。">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+  :root {
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --text: #1c1917;
+    --muted: #57534e;
+    --border: #e7e5e4;
+    --accent: #dc2626;
+    --accent-text: #ffffff;
+    --warn-bg: #fef2f2;
+    --warn-border: #fecaca;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0a09;
+      --surface: #1c1917;
+      --text: #fafaf9;
+      --muted: #a8a29e;
+      --border: #292524;
+      --accent: #ef4444;
+      --accent-text: #0c0a09;
+      --warn-bg: #2a1210;
+      --warn-border: #5b1d1a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.75 system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", sans-serif;
+  }
+  main { max-width: 46rem; margin: 0 auto; padding: 4rem 1rem 3rem; }
+  header { text-align: center; }
+  header img { width: 96px; height: 96px; }
+  h1 { margin: 1rem 0 0.25rem; font-size: 2.25rem; letter-spacing: 0.02em; }
+  .lead { margin: 0 auto; max-width: 34rem; color: var(--muted); }
+  .downloads { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; margin: 2rem 0 0.5rem; }
+  .button {
+    display: inline-block;
+    padding: 0.7rem 1.4rem;
+    border-radius: 0.5rem;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .button:hover { filter: brightness(1.08); }
+  .button:focus-visible, a:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
+  .version { text-align: center; color: var(--muted); font-size: 0.875rem; margin: 0; }
+  section { margin-top: 3.5rem; }
+  h2 { font-size: 1.35rem; margin: 0 0 1rem; }
+  .features { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
+  .features li { background: var(--surface); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.9rem 1.1rem; }
+  .features strong { display: block; }
+  .features span { color: var(--muted); font-size: 0.95rem; }
+  .notice { background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: 0.5rem; padding: 1rem 1.1rem; }
+  .notice p { margin: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; white-space: nowrap; }
+  ol, ul.plain { padding-left: 1.4rem; margin: 0; }
+  a { color: inherit; text-underline-offset: 3px; }
+  footer { margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.875rem; }
+  footer p { margin: 0 0 0.5rem; }
+  @media (max-width: 30rem) { h1 { font-size: 1.85rem; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="icon.svg" alt="" width="96" height="96">
+    <h1>EQViewer</h1>
+    <p class="lead">緊急地震速報・地震履歴・強震モニタのリアルタイム震度を、ひとつの画面で確認できる地震情報アプリです。</p>
+    <div class="downloads">
+      <a class="button" id="dl-win" href="https://github.com/minittupoyo/eqviewer/releases/latest">Windows 版をダウンロード</a>
+      <a class="button" id="dl-mac" href="https://github.com/minittupoyo/eqviewer/releases/latest">macOS 版をダウンロード</a>
+    </div>
+    <p class="version" id="version">最新版は <a href="https://github.com/minittupoyo/eqviewer/releases/latest">Releases</a> から入手できます。</p>
+  </header>
+
+  <section>
+    <div class="notice">
+      <p><strong>非公式の参考表示です。</strong>表示する緊急地震速報は、配信元から受け取った情報をそのまま見せるもので、公式の警報ではありません。安全に関わる判断には、気象庁・自治体などの公式の情報を使ってください。</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>機能</h2>
+    <ul class="features">
+      <li><strong>緊急地震速報(EEW)</strong><span>震源・マグニチュード・最大震度・警報/予報を表示し、地図にP波・S波の到達予想円を描きます。新しい速報で通知と受信音を鳴らし、警報ではウィンドウを前面に出せます。</span></li>
+      <li><strong>自宅地点への到達予測</strong><span>設定した緯度経度に、S波が届くまでの残り時間を表示します。</span></li>
+      <li><strong>地震履歴</strong><span>一覧と、震度分布の地図つきの詳細。震度速報(地域単位)と、震源・震度に関する情報(市町村単位)に対応します。</span></li>
+      <li><strong>強震モニタ</strong><span>全国約1,600点の観測点のリアルタイム震度を地図に表示します。</span></li>
+      <li><strong>時計の補正</strong><span>NICTのNTPサーバーでPCの時計ずれを補正し、到達円や経過秒に使います。</span></li>
+      <li><strong>バックグラウンド動作</strong><span>ウィンドウを閉じてもトレイに常駐して受信を続けます(設定で変更できます)。</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>インストール</h2>
+    <p>署名はしていないため、初回は次の操作が必要です。</p>
+    <ol>
+      <li>上のボタンから、Windows 用のインストーラ(<code>.exe</code>)または macOS 用のディスクイメージ(<code>.dmg</code>)をダウンロードします。</li>
+      <li>Windows: SmartScreen の警告が出たら「詳細情報」→「実行」を選びます。</li>
+      <li>macOS: 初回は右クリック→「開く」を選びます(または システム設定 → プライバシーとセキュリティ で許可します)。</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>情報源</h2>
+    <table>
+      <tbody>
+        <tr><th>緊急地震速報</th><td>wolfx WebSocket API / P2P地震情報 WebSocket API(警報のみ) / AXIS API</td></tr>
+        <tr><th>地震履歴</th><td>P2P地震情報 / 気象庁防災情報XML(PULL型)</td></tr>
+        <tr><th>リアルタイム震度</th><td>強震モニタ(防災科研)</td></tr>
+        <tr><th>地図</th><td>気象庁・国土数値情報(国内) / Natural Earth(国外)</td></tr>
+      </tbody>
+    </table>
+    <p>各情報源の利用条件に従ってください。</p>
+  </section>
+
+  <footer>
+    <p>ソースコードは <a href="https://github.com/minittupoyo/eqviewer">GitHub</a> で公開しています(MIT License)。同梱・参照しているデータは、それぞれの提供元のライセンスや規約に従います。</p>
+  </footer>
+</main>
+<script>
+  // 最新リリースの添付ファイルへ直接リンクする。取得できなければ Releases のページのままにする。
+  (async () => {
+    try {
+      const r = await fetch("https://api.github.com/repos/minittupoyo/eqviewer/releases/latest");
+      if (!r.ok) return;
+      const rel = await r.json();
+      const url = (ext) => rel.assets.find((a) => a.name.endsWith(ext))?.browser_download_url;
+      const exe = url(".exe");
+      const dmg = url(".dmg");
+      if (exe) document.getElementById("dl-win").href = exe;
+      if (dmg) document.getElementById("dl-mac").href = dmg;
+      document.getElementById("version").textContent = "最新版: " + rel.tag_name;
+    } catch {}
+  })();
+</script>
+</body>
+</html>

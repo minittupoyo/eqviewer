@@ -69,6 +69,7 @@ WindowsとmacOS向けの配布物は、GitHub Actionsでも作れます。
 
 - `Build`: 手動実行(Actionsタブの Run workflow)。成果物をアップロードします。
 - `Release`: `v0.1.0` のようなタグをpushすると、下書きのリリースに添付します。タグと、`tauri.conf.json`・`package.json`・`Cargo.toml` のバージョンが一致している必要があります。
+- `Pages`: `site/`(紹介ページ)を GitHub Pages に公開します。`main` に `site/` の変更をpushすると動きます。初回だけ、リポジトリの Settings → Pages で Source を「GitHub Actions」にしてください。
 
 ### Rustのテスト
 
