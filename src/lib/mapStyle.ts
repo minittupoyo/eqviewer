@@ -22,8 +22,8 @@ export function buildStyle(
     version: 8,
     sources: {
       world: { type: "geojson", data: "/map/world.geojson", maxzoom: 8 },
-      city: { type: "geojson", data: "/map/jp-city.geojson", maxzoom: 10, promoteId: "regioncode" },
-      pref: { type: "geojson", data: "/map/jp-pref.geojson", maxzoom: 10 },
+      city: { type: "vector", tiles: ["pack://jp-city/{z}/{x}/{y}"], maxzoom: 10, promoteId: "regioncode" },
+      pref: { type: "vector", tiles: ["pack://jp-pref/{z}/{x}/{y}"], maxzoom: 10 },
       ...overlay.sources,
     },
     layers: [
@@ -31,10 +31,10 @@ export function buildStyle(
       { id: "sea", type: "background", paint: { "background-color": "#8199b3" } },
       { id: "world", type: "fill", source: "world", paint: { "fill-color": "#f3f1ea", "fill-outline-color": "#b8b4a8" } },
       // 世界地図は簡略化で小さな島を落とすため、国内は市町村の形でも陸地を塗る
-      { id: "city-land", type: "fill", source: "city", paint: { "fill-color": "#f3f1ea" } },
-      { id: "city", type: "fill", source: "city", paint: { "fill-color": scaleColorExpr } },
-      { id: "city-line", type: "line", source: "city", minzoom: 6, paint: { "line-color": "#9a968a", "line-width": 0.4 } },
-      { id: "pref-line", type: "line", source: "pref", paint: { "line-color": "#7a766a", "line-width": 0.8 } },
+      { id: "city-land", type: "fill", source: "city", "source-layer": "city", paint: { "fill-color": "#f3f1ea" } },
+      { id: "city", type: "fill", source: "city", "source-layer": "city", paint: { "fill-color": scaleColorExpr } },
+      { id: "city-line", type: "line", source: "city", "source-layer": "city", minzoom: 6, paint: { "line-color": "#9a968a", "line-width": 0.4 } },
+      { id: "pref-line", type: "line", source: "pref", "source-layer": "pref", paint: { "line-color": "#7a766a", "line-width": 0.8 } },
       ...overlay.layers,
     ],
   };
@@ -50,13 +50,14 @@ export const epicenterLayers = (source: string): LayerSpecification[] => [
 
 /** 震度速報の地域(細分区域)の色付け。`feature-state.scale` は地域名のキーで設定する。 */
 export const areaOverlay: { sources: Record<string, SourceSpecification>; layers: LayerSpecification[] } = {
-  sources: { area: { type: "geojson", data: "/map/jp-area.geojson", maxzoom: 10, promoteId: "name" } },
+  sources: { area: { type: "vector", tiles: ["pack://jp-area/{z}/{x}/{y}"], maxzoom: 10, promoteId: "name" } },
   layers: [
-    { id: "area", type: "fill", source: "area", paint: { "fill-color": scaleColorExpr } },
+    { id: "area", type: "fill", source: "area", "source-layer": "area", paint: { "fill-color": scaleColorExpr } },
     {
       id: "area-line",
       type: "line",
       source: "area",
+      "source-layer": "area",
       paint: {
         "line-color": "#7a766a",
         "line-width": 0.8,

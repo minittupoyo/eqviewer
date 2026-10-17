@@ -6,9 +6,11 @@ import { setWorkerUrl } from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/noto-sans-jp";
+import { registerTilePack } from "./lib/tilePack";
 import App from "./App.vue";
 import "./style.css";
 
 setWorkerUrl(workerUrl);
+registerTilePack();
 
 createApp(App).use(createPinia()).mount("#app");

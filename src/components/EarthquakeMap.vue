@@ -43,14 +43,14 @@ function epicenter(eq: Earthquake) {
 function update() {
   if (!map || !cities) return;
   const eq = props.eq;
-  for (const id of painted) map.removeFeatureState({ source: "city", id });
+  for (const id of painted) map.removeFeatureState({ source: "city", sourceLayer: "city", id });
   const scales = cityScales(cities, eq.points);
   painted = [...scales.keys()];
-  for (const [id, scale] of scales) map.setFeatureState({ source: "city", id }, { scale });
-  for (const id of paintedAreas) map.removeFeatureState({ source: "area", id });
+  for (const [id, scale] of scales) map.setFeatureState({ source: "city", sourceLayer: "city", id }, { scale });
+  for (const id of paintedAreas) map.removeFeatureState({ source: "area", sourceLayer: "area", id });
   const aScales = areaScales(eq.points);
   paintedAreas = [...aScales.keys()];
-  for (const [id, scale] of aScales) map.setFeatureState({ source: "area", id }, { scale });
+  for (const [id, scale] of aScales) map.setFeatureState({ source: "area", sourceLayer: "area", id }, { scale });
   (map.getSource("epicenter") as maplibregl.GeoJSONSource).setData(epicenter(eq));
 
   fit(0);
