@@ -1,7 +1,95 @@
-# Tauri + Vue + TypeScript
+# EQViewer
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+地震情報を受信して表示するデスクトップアプリです。緊急地震速報(EEW)の受信・表示、地震履歴、強震モニタのリアルタイム震度を、ひとつの画面で確認できます。
 
-## Recommended IDE Setup
+> **免責**: 本アプリが表示する緊急地震速報は、配信元から受け取った情報の**非公式な参考表示**です。公式の警報ではありません。安全に関わる判断には、気象庁・自治体などの公式の情報を使ってください。
 
-- [VS Code](https://code.visualstudio.com/) + [Vue - Official](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+対応OS: Windows / macOS
+
+## 機能
+
+- **緊急地震速報(EEW)**: 震源・マグニチュード・最大震度・警報/予報を表示し、地図にP波・S波の到達予想円を描きます。新しい速報で通知と受信音を鳴らし、警報ではウィンドウを前面に出せます。
+- **自宅地点への到達予測**: 設定した緯度経度に、S波が届くまでの残り時間を表示します。震度の予測はしません。
+- **地震履歴**: 一覧と詳細(震度分布の地図つき)。震度速報(地域単位)と、震源・震度に関する情報(市町村単位)の両方に対応します。取得した履歴はSQLiteに保存し、配信元への負荷を抑えます。
+- **強震モニタ**: 全国約1,600点の観測点のリアルタイム震度を地図に表示します。南西諸島は別のミニマップで表示します。
+- **時計の補正**: NICTのNTPサーバーでPCの時計ずれを補正し、到達円や経過秒に使います。
+- **バックグラウンド動作**: ウィンドウを閉じてもトレイに常駐して受信を続けます(設定で変更可)。
+
+### 情報源
+
+| 用途 | 情報源 |
+|---|---|
+| 緊急地震速報 | wolfx WebSocket API / P2P地震情報 WebSocket API(警報のみ) / AXIS API |
+| 地震履歴 | P2P地震情報 / 気象庁防災情報XML(PULL型) |
+| リアルタイム震度 | 強震モニタ(防災科研) |
+
+AXISを使う設定(要アクセストークン)にすると、wolfxは停止します。各情報源の利用条件に従ってください。
+
+## インストール
+
+[Releases](../../releases) から、Windows用のインストーラ(`.exe`)またはmacOS用のディスクイメージ(`.dmg`)をダウンロードしてください。
+
+署名はしていません。
+
+- Windows: SmartScreenの警告が出たら「詳細情報」→「実行」。
+- macOS: 初回は右クリック→「開く」(または システム設定 → プライバシーとセキュリティ で許可)。
+
+## 設定
+
+画面右下の「設定」から変更できます。
+
+- AXISの利用とアクセストークン
+- 強震モニタの常時取得(通常は強震モニタ画面を開いている間だけ取得します)
+- ウィンドウを閉じたときのトレイ常駐 / 警報での前面表示
+- 受信音(有効/無効・音量)
+- 自宅地点(緯度・経度)
+
+「ライセンス」から、使用しているデータとライブラリのライセンスを確認できます。
+
+## 開発
+
+スタックは Tauri 2(Rust)+ Vue 3 + shadcn-vue + Tailwind CSS v4、地図は MapLibre GL JS です。パッケージ管理には [bun](https://bun.sh/) を使います。
+
+```bash
+bun install
+bun run tauri dev      # 開発用に起動
+bun run test           # フロントエンドのテスト
+bun run build          # 型チェックとフロントエンドのビルド
+```
+
+### Windows向けビルド(WSLなどのLinuxから)
+
+[cargo-xwin](https://github.com/rust-cross/cargo-xwin) でクロスコンパイルします。
+
+```bash
+bun run build:win
+```
+
+WindowsとmacOS向けの配布物は、GitHub Actionsでも作れます。
+
+- `Build`: 手動実行(Actionsタブの Run workflow)。成果物をアップロードします。
+- `Release`: `v0.1.0` のようなタグをpushすると、下書きのリリースに添付します。タグと、`tauri.conf.json`・`package.json`・`Cargo.toml` のバージョンが一致している必要があります。
+
+### Rustのテスト
+
+`src-tauri/tests/fixtures/`(取得した配信データなどのテスト用データ)は、公開リポジトリに含めていません。Rustのテスト(`cargo test`)はこのデータが前提で、クローンしただけではテストをビルドできません。アプリ本体のビルドには影響しません。
+
+### データの再生成
+
+| 内容 | コマンド |
+|---|---|
+| 地図データ(`public/map/`) | `tools/build-map.sh <作業ディレクトリ>` |
+| 強震モニタの観測点表 | `python tools/build-kmoni-points.py <intensity-points.json>` |
+| 強震モニタの色→震度の変換表 | `uv run --with pillow python tools/build-kmoni-scale.py <凡例gif>` |
+| ライセンス一覧(依存を変えたとき) | `bun run licenses` |
+
+設計・仕様の詳細は [PLAN.md](PLAN.md) を参照してください。
+
+## データの出典・ライセンス
+
+- 気象庁: 防災情報XML、走時表(JMA2001)、地震情報の地域区分、市町村等(地震津波関係)の地図データ
+- 国土数値情報(行政区域)、Natural Earth(国外の地図)
+- 強震モニタ(防災科研)、P2P地震情報、wolfx、AXIS
+- 観測点の位置: [ingen084/kyoshin-monitor-observation-points](https://github.com/ingen084/kyoshin-monitor-observation-points)(MIT License)
+
+使用しているデータ・ライブラリのライセンスの全文は、アプリ内の「ライセンス」画面で確認できます。
