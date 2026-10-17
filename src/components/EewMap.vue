@@ -6,7 +6,6 @@ import { useEewStore } from "@/stores/eew";
 import { useKmoniStore } from "@/stores/kmoni";
 import { KMONI_STALE_MS, kmoniOverlay } from "@/lib/kmoniLayer";
 import RemoteIslandsMap from "@/components/RemoteIslandsMap.vue";
-import { loadCities } from "@/lib/map";
 import { buildStyle, emptyCollection, epicenterLayers } from "@/lib/mapStyle";
 import { JAPAN_BOUNDS, JAPAN_PADDING, ResetViewControl, fitJapan } from "@/lib/mapControls";
 import { circle, radiusAt } from "@/lib/wave";
@@ -99,14 +98,13 @@ function resetView(duration: number) {
   map.easeTo({ center: [latest.longitude!, latest.latitude!], zoom: 6, bearing: 0, pitch: 0, duration });
 }
 
-onMounted(async () => {
-  const cities = await loadCities();
+onMounted(() => {
   map = new maplibregl.Map({
     container: el.value!,
     attributionControl: false,
     bounds: JAPAN_BOUNDS,
     fitBoundsOptions: { padding: JAPAN_PADDING },
-    style: buildStyle(cities, {
+    style: buildStyle({
       sources: {
         ...kmoniOverlay.sources,
         "eew-epicenter": { type: "geojson", data: emptyCollection },

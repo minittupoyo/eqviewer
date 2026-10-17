@@ -26,9 +26,10 @@ export const SCALE_COLOR: Record<string, string> = {
 const PREFECTURES =
   "北海道 青森県 岩手県 宮城県 秋田県 山形県 福島県 茨城県 栃木県 群馬県 埼玉県 千葉県 東京都 神奈川県 新潟県 富山県 石川県 福井県 山梨県 長野県 岐阜県 静岡県 愛知県 三重県 滋賀県 京都府 大阪府 兵庫県 奈良県 和歌山県 鳥取県 島根県 岡山県 広島県 山口県 徳島県 香川県 愛媛県 高知県 福岡県 佐賀県 長崎県 熊本県 大分県 宮崎県 鹿児島県 沖縄県".split(" ");
 
+/** 形は外接矩形だけの軽量版(`tools/build-map-index.py`)。描画用の本体はMapLibreのワーカーが直接読む。 */
 let cache: Promise<CityCollection> | null = null;
 export const loadCities = () =>
-  (cache ??= fetch("/map/jp-city.geojson").then((r) => r.json()));
+  (cache ??= fetch("/map/jp-city-index.geojson").then((r) => r.json()));
 
 /**
  * 市町村ごとの最大震度を返す。返り値のキーは regioncode。
@@ -76,7 +77,7 @@ export type AreaCollection = FeatureCollection<Geometry, AreaProps>;
 
 let areaCache: Promise<AreaCollection> | null = null;
 export const loadAreas = () =>
-  (areaCache ??= fetch("/map/jp-area.geojson").then((r) => r.json()));
+  (areaCache ??= fetch("/map/jp-area-index.geojson").then((r) => r.json()));
 
 /**
  * 震度速報の地域(細分区域)ごとの最大震度。返り値のキーは地域名(例: 茨城県北部)。

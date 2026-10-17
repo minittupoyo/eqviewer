@@ -4,7 +4,7 @@ import type {
   SourceSpecification,
   StyleSpecification,
 } from "maplibre-gl";
-import { SCALE_COLOR, type CityCollection } from "@/lib/map";
+import { SCALE_COLOR } from "@/lib/map";
 
 /** 市町村の `feature-state.scale` に応じた塗り色 */
 const scaleColorExpr = [
@@ -16,15 +16,14 @@ const scaleColorExpr = [
 
 /** 世界・市町村・都道府県境の共通ベースマップ。`overlay` で地図ごとのレイヤーを上に重ねる。 */
 export function buildStyle(
-  cities: CityCollection,
   overlay: { sources: Record<string, SourceSpecification>; layers: LayerSpecification[] },
 ): StyleSpecification {
   return {
     version: 8,
     sources: {
-      world: { type: "geojson", data: "/map/world.geojson" },
-      city: { type: "geojson", data: cities, promoteId: "regioncode" },
-      pref: { type: "geojson", data: "/map/jp-pref.geojson" },
+      world: { type: "geojson", data: "/map/world.geojson", maxzoom: 8 },
+      city: { type: "geojson", data: "/map/jp-city.geojson", maxzoom: 10, promoteId: "regioncode" },
+      pref: { type: "geojson", data: "/map/jp-pref.geojson", maxzoom: 10 },
       ...overlay.sources,
     },
     layers: [
@@ -51,7 +50,7 @@ export const epicenterLayers = (source: string): LayerSpecification[] => [
 
 /** 震度速報の地域(細分区域)の色付け。`feature-state.scale` は地域名のキーで設定する。 */
 export const areaOverlay: { sources: Record<string, SourceSpecification>; layers: LayerSpecification[] } = {
-  sources: { area: { type: "geojson", data: "/map/jp-area.geojson", promoteId: "name" } },
+  sources: { area: { type: "geojson", data: "/map/jp-area.geojson", maxzoom: 10, promoteId: "name" } },
   layers: [
     { id: "area", type: "fill", source: "area", paint: { "fill-color": scaleColorExpr } },
     {

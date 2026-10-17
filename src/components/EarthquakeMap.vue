@@ -73,14 +73,14 @@ function fit(duration: number) {
 }
 
 onMounted(async () => {
-  const loaded = (cities = await loadCities());
-  areas = await loadAreas();
+  // 描画用の本体はワーカーが読むので、地図は軽量インデックスを待たずに作る
+  const indexes = Promise.all([loadCities(), loadAreas()]);
   map = new maplibregl.Map({
     container: el.value!,
     attributionControl: false,
     center: [137, 38],
     zoom: 4,
-    style: buildStyle(loaded, {
+    style: buildStyle({
       sources: { ...areaOverlay.sources, epicenter: { type: "geojson", data: epicenter(props.eq) } },
       layers: [...areaOverlay.layers, ...epicenterLayers("epicenter")],
     }),
@@ -93,7 +93,9 @@ onMounted(async () => {
       customAttribution: "気象庁・Natural Earth",
     }),
   );
-  map.on("load", update);
+  [cities, areas] = await indexes;
+  if (map.loaded()) update();
+  else map.once("load", update);
 });
 
 watch(() => props.eq, update);

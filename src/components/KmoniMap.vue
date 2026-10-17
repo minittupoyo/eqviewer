@@ -4,7 +4,6 @@ import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useKmoniStore } from "@/stores/kmoni";
 import RemoteIslandsMap from "@/components/RemoteIslandsMap.vue";
-import { loadCities } from "@/lib/map";
 import { buildStyle } from "@/lib/mapStyle";
 import { JAPAN_BOUNDS, JAPAN_PADDING, ResetViewControl, fitJapan } from "@/lib/mapControls";
 import { KMONI_LEGEND_GRADIENT, KMONI_STALE_MS, kmoniOverlay } from "@/lib/kmoniLayer";
@@ -22,14 +21,13 @@ function render() {
   (map.getSource("kmoni") as maplibregl.GeoJSONSource).setData(store.points);
 }
 
-onMounted(async () => {
-  const cities = await loadCities();
+onMounted(() => {
   map = new maplibregl.Map({
     container: el.value!,
     attributionControl: false,
     bounds: JAPAN_BOUNDS,
     fitBoundsOptions: { padding: JAPAN_PADDING },
-    style: buildStyle(cities, kmoniOverlay),
+    style: buildStyle(kmoniOverlay),
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
   map.addControl(new ResetViewControl(() => map && fitJapan(map, 400)), "top-right");

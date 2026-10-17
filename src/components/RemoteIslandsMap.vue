@@ -2,7 +2,6 @@
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { loadCities } from "@/lib/map";
 import { buildStyle } from "@/lib/mapStyle";
 import { kmoniOverlay } from "@/lib/kmoniLayer";
 
@@ -21,15 +20,14 @@ function render() {
   (map.getSource("kmoni") as maplibregl.GeoJSONSource).setData(props.points);
 }
 
-onMounted(async () => {
-  const cities = await loadCities();
+onMounted(() => {
   map = new maplibregl.Map({
     container: el.value!,
     attributionControl: false,
     interactive: false,
     bounds: BOUNDS,
     fitBoundsOptions: { padding: 0 },
-    style: buildStyle(cities, kmoniOverlay),
+    style: buildStyle(kmoniOverlay),
   });
   map.on("load", render);
 });
