@@ -8,9 +8,12 @@ import { gzipSync } from "node:zlib";
 import { readFileSync, writeFileSync } from "node:fs";
 
 const MAX_ZOOM = 10;
-// 簡略化の強さ。タイルごとに、塗りの三角形分割が破綻しないものを順に試す。
+// 簡略化の強さの候補。タイルごとに、塗りの三角形分割が破綻しないものを順に試す。
 // (簡略化・クリップで輪が自己交差すると MapLibre の earcut が失敗し、その地域の塗りが消える)
-const TOLERANCES = [6, 0, 2, 12, 24];
+// 強くしすぎると隣り合う市町村の境界が別々に簡略化されて隙間が出る。タイルごとに強さが違うと
+// タイルの境目にも隙間が出るので、強い値(12, 24)は小さい値がすべて破綻したタイルだけで使う。
+const TOLERANCES = [6, 0, 2, 4, 8, 12, 24];
+const SMALL = 5; // TOLERANCES のうち小さい値の数
 // 描画と震度の対応づけに使う属性だけ残す
 const KEEP: Record<string, string[]> = { "jp-city": ["regioncode"], "jp-pref": [], "jp-area": ["name"] };
 
@@ -66,6 +69,7 @@ function signedArea(r: number[][]) {
 /** 塗りの三角形分割のずれ(最悪値)。0に近いほど正しく塗れる。 */
 function fillError(tile: any) {
   let worst = 0;
+  if (!tile) return worst;
   for (const f of tile.features) {
     if (f.type !== 3) continue;
     const polys: number[][][][] = [];
@@ -94,11 +98,11 @@ function fillError(tile: any) {
 function pickTile(indexes: any[], z: number, x: number, y: number) {
   let best: any = null;
   let bestErr = Infinity;
-  for (const index of indexes) {
+  // 低ズームでは強い値の隙間が目立つうえ、破綻するのは元データの不正な輪(名古屋港区など)なので使わない
+  for (const index of z < 7 ? indexes.slice(0, SMALL) : indexes) {
     const tile = index.getTile(z, x, y);
-    if (!tile || !tile.features.length) return tile;
     const err = fillError(tile);
-    if (err < 1e-3) return tile;
+    if (err < 1e-2) return tile;
     if (err < bestErr) [best, bestErr] = [tile, err];
   }
   return best;
