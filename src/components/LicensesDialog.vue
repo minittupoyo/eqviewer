@@ -14,9 +14,9 @@ const open = defineModel<boolean>("open", { required: true });
 
 type Entry = { name: string; use: string; license: string; url?: string; text?: string };
 
-const MIT_INGEN084 = `MIT License
+const mit = (holder: string) => `MIT License
 
-Copyright (c) 2025 ingen084
+Copyright (c) ${holder}
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -35,9 +35,12 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.`;
+const MIT_INGEN084 = mit("2025 ingen084");
+const MIT_SELF = mit("2026 minittupoyo");
 
 /** データ・情報源(手書き。利用条件は各提供元の規約に従う) */
 const data: Entry[] = [
+  { name: "EQViewer(このアプリのソースコード)", use: "本体", license: "MIT License", url: "https://github.com/minittupoyo/eqviewer", text: MIT_SELF },
   { name: "気象庁 防災情報XML・走時表(JMA2001)・震度観測点・地震情報の地域区分・市町村等(地震津波関係)", use: "地震情報、到達円、国内の地図", license: "政府標準利用規約(第2.0版)に準拠", url: "https://www.jma.go.jp/jma/kishou/info/coment.html" },
   { name: "国土数値情報 行政区域", use: "国内の地図", license: "国土数値情報ダウンロードサービス利用規約に準拠", url: "https://nlftp.mlit.go.jp/ksj/other/agreement.html" },
   { name: "Natural Earth", use: "国外の地図", license: "パブリックドメイン", url: "https://www.naturalearthdata.com/about/terms-of-use/" },
@@ -86,7 +89,7 @@ const KIND_LABEL = { rust: "Rust", npm: "JavaScript" } as const;
       <ScrollArea class="h-[65vh] pr-3">
         <div class="space-y-6 text-sm">
           <section>
-            <h3 class="mb-2 font-semibold">データ・情報源</h3>
+            <h3 class="mb-2 font-semibold">このアプリ・データ・情報源</h3>
             <ul class="space-y-2">
               <li v-for="e in data" :key="e.name">
                 <details v-if="e.text">
