@@ -5,6 +5,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useEewStore } from "@/stores/eew";
 import { useKmoniStore } from "@/stores/kmoni";
 import { KMONI_STALE_MS, kmoniOverlay } from "@/lib/kmoniLayer";
+import EewPanel from "@/components/EewPanel.vue";
 import RemoteIslandsMap from "@/components/RemoteIslandsMap.vue";
 import { buildStyle, emptyCollection, epicenterLayers } from "@/lib/mapStyle";
 import { JAPAN_BOUNDS, JAPAN_PADDING, ResetViewControl, fitJapan } from "@/lib/mapControls";
@@ -149,10 +150,11 @@ onBeforeUnmount(() => map?.remove());
 <template>
   <div class="relative h-full w-full">
     <div ref="el" class="h-full w-full" />
-    <div v-if="kmoniFresh" class="absolute left-3 top-3">
-      <RemoteIslandsMap :points="kmoniPoints" />
+    <div class="absolute left-3 top-3 flex flex-col items-start gap-2">
+      <EewPanel />
+      <RemoteIslandsMap v-if="kmoniFresh" :points="kmoniPoints" />
     </div>
-    <ul class="absolute bottom-8 left-3 space-y-1 rounded bg-background/90 px-3 py-2 text-xs shadow">
+    <ul class="absolute bottom-8 left-3 space-y-1 rounded-lg bg-slate-900/90 px-3 py-2 text-xs text-slate-200 shadow-lg backdrop-blur">
       <li class="flex items-center gap-2">
         <span class="inline-block h-0.5 w-5 bg-blue-600" />P波(初期微動)の到達予想
       </li>

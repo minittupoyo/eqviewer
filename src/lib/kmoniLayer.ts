@@ -34,7 +34,7 @@ export const kmoniOverlay: {
   ],
 };
 
-/** 凡例用のCSSグラデーション(下が-3、上が7) */
-export const KMONI_LEGEND_GRADIENT = `linear-gradient(to top, ${KMONI_COLOR_STOPS.map(
+/** 凡例用のCSSグラデーション(左が-3、右が7) */
+export const KMONI_LEGEND_GRADIENT = `linear-gradient(to right, ${KMONI_COLOR_STOPS.map(
   ([v, c]) => `${c} ${((v + 3) / 10) * 100}%`,
 ).join(", ")})`;

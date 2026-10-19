@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
+import { Settings } from "@lucide/vue";
 import { useSourcesStore } from "@/stores/sources";
 import { Button } from "@/components/ui/button";
 import {
@@ -81,7 +82,9 @@ async function save() {
 <template>
   <Dialog v-model:open="open">
     <DialogTrigger as-child>
-      <Button variant="ghost" size="sm" class="h-6 px-2 text-xs">設定</Button>
+      <Button variant="ghost" size="icon" class="size-8 text-slate-300 hover:bg-white/10 hover:text-white" aria-label="設定" title="設定">
+        <Settings class="size-4" aria-hidden="true" />
+      </Button>
     </DialogTrigger>
     <DialogContent>
       <DialogHeader>

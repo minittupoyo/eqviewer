@@ -50,8 +50,8 @@ onBeforeUnmount(() => {
 
 <template>
   <!-- 幅はウィンドウの幅・高さに応じて変わる(小さい画面で地図を覆わず、大きい画面では見やすくする) -->
-  <div class="relative aspect-[8/5] w-[clamp(12rem,min(24vw,45vh),32rem)] overflow-hidden rounded border bg-background shadow">
+  <div class="relative aspect-[8/5] w-[clamp(12rem,min(24vw,45vh),32rem)] overflow-hidden rounded-lg border-2 border-slate-900/90 bg-background shadow-lg">
     <div ref="el" class="h-full w-full" />
-    <span class="absolute left-1.5 top-1 rounded bg-background/80 px-1 text-xs">南西諸島</span>
+    <span class="absolute left-1.5 top-1.5 rounded bg-slate-900/85 px-1.5 py-0.5 text-xs text-white">南西諸島</span>
   </div>
 </template>

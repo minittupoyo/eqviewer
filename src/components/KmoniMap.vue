@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useKmoniStore } from "@/stores/kmoni";
+import EewPanel from "@/components/EewPanel.vue";
 import RemoteIslandsMap from "@/components/RemoteIslandsMap.vue";
 import { buildStyle } from "@/lib/mapStyle";
 import { JAPAN_BOUNDS, JAPAN_PADDING, ResetViewControl, fitJapan } from "@/lib/mapControls";
@@ -50,16 +51,25 @@ onBeforeUnmount(() => {
 <template>
   <div class="relative h-full w-full">
     <div ref="el" class="h-full w-full" />
-    <div class="absolute left-3 top-3 rounded bg-background/90 px-3 py-1.5 text-sm shadow">
-      <span class="font-medium">リアルタイム震度</span>
-      <span class="ml-2 tabular-nums text-muted-foreground">{{ store.timeLabel ?? "取得中…" }}</span>
-      <span v-if="store.timeLabel && stale" class="ml-2 text-destructive">更新が止まっています</span>
+    <div class="absolute left-3 top-3 flex flex-col items-start gap-2">
+      <EewPanel />
+      <div class="flex items-center gap-3 rounded-lg bg-slate-900/90 px-3 py-2 text-white shadow-lg backdrop-blur">
+      <span
+        class="size-2 rounded-full"
+        :class="!store.timeLabel ? 'bg-amber-400' : stale ? 'bg-red-500' : 'animate-pulse bg-emerald-400'"
+        aria-hidden="true"
+      />
+      <span class="text-lg font-semibold tabular-nums leading-none">{{ store.timeLabel ?? "取得中…" }}</span>
+      <span v-if="store.timeLabel && stale" class="text-xs text-red-300">更新が止まっています</span>
     </div>
-    <div class="absolute left-3 top-14"><RemoteIslandsMap :points="store.points" /></div>
-    <div class="absolute bottom-8 left-3 flex items-stretch gap-2 rounded bg-background/90 px-3 py-2 text-xs shadow">
-      <div class="h-32 w-3 rounded-sm" :style="{ background: KMONI_LEGEND_GRADIENT }" />
-      <div class="flex flex-col justify-between tabular-nums">
-        <span>7</span><span>5</span><span>3</span><span>1</span><span>-1</span><span>-3</span>
+      <RemoteIslandsMap :points="store.points" />
+    </div>
+    <!-- 横長の凡例。縦に長いと地図の左下を大きく覆うため -->
+    <div class="absolute bottom-8 left-3 w-64 rounded-lg bg-slate-900/90 px-3 py-2 text-xs text-slate-200 shadow-lg backdrop-blur">
+      <div class="mb-1 text-[0.7rem] text-slate-400">リアルタイム震度</div>
+      <div class="h-2.5 rounded-sm" :style="{ background: KMONI_LEGEND_GRADIENT }" />
+      <div class="mt-1 flex justify-between tabular-nums">
+        <span>-3</span><span>-1</span><span>1</span><span>3</span><span>5</span><span>7</span>
       </div>
     </div>
   </div>
