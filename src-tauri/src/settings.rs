@@ -14,6 +14,8 @@ pub struct Settings {
     pub close_to_tray: bool,
     /// 緊急地震速報(警報)の受信時にウィンドウを前面に出す
     pub focus_on_eew: bool,
+    /// 地図の凡例(震度の色、波の線)を表示する
+    pub show_legend: bool,
     /// 自宅地点(緯度・経度)。設定されていれば、緊急地震速報で波の到達までの残り時間を出す
     /// 緊急地震速報の受信音を鳴らす
     pub sound_enabled: bool,
@@ -31,6 +33,7 @@ impl Default for Settings {
             kmoni_always: false,
             close_to_tray: true,
             focus_on_eew: true,
+            show_legend: true,
             sound_enabled: true,
             sound_volume: 70,
             home_lat: None,
@@ -92,6 +95,7 @@ mod tests {
             kmoni_always: true,
             close_to_tray: false,
             focus_on_eew: false,
+            show_legend: false,
             sound_enabled: false,
             sound_volume: 30,
             home_lat: Some(35.0),
@@ -111,5 +115,6 @@ mod tests {
         assert!(old.axis_enabled && old.close_to_tray && old.focus_on_eew);
         assert_eq!((old.home_lat, old.home_lon), (None, None));
         assert!(old.sound_enabled && old.sound_volume == 70);
+        assert!(old.show_legend);
     }
 }

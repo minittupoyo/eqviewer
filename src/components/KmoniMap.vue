@@ -4,6 +4,7 @@ import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useKmoniStore } from "@/stores/kmoni";
 import { useEewStore } from "@/stores/eew";
+import { useSourcesStore } from "@/stores/sources";
 import EewPanel from "@/components/EewPanel.vue";
 import RemoteIslandsMap from "@/components/RemoteIslandsMap.vue";
 import { buildStyle, emptyCollection, epicenterLayers, registerEpicenterIcon } from "@/lib/mapStyle";
@@ -14,9 +15,12 @@ import { KMONI_LEGEND_GRADIENT, KMONI_STALE_MS, kmoniOverlay } from "@/lib/kmoni
 
 const store = useKmoniStore();
 const eew = useEewStore();
+const sources = useSourcesStore();
 const el = ref<HTMLDivElement>();
 let map: maplibregl.Map | undefined;
 let fittedEvent: string | undefined;
+/** 全国が収まる標準の表示か。南西諸島のミニマップは、全国表示のときだけ出す(拡大中は範囲外の島が本図に映るため) */
+const atHome = ref(true);
 /** 予測円に追従して表示範囲を変えるか。地図を自分で動かすと止まり、新しい地震かボタンで再開する。 */
 const follow = ref(true);
 /** 追従の最小の半径(km)。発生直後の小さな円に寄りすぎないようにする */
@@ -96,6 +100,20 @@ function renderEew() {
   if (follow.value) followView(0);
 }
 
+/** いまの表示が全国の標準の表示かを調べる */
+function updateAtHome() {
+  if (!map) return;
+  const home = map.cameraForBounds(JAPAN_BOUNDS, { padding: JAPAN_PADDING });
+  const c = map.getCenter();
+  atHome.value =
+    !!home?.center &&
+    Math.abs(map.getZoom() - (home.zoom ?? 0)) < 0.05 &&
+    Math.abs(c.lng - (home.center as maplibregl.LngLat).lng) < 0.05 &&
+    Math.abs(c.lat - (home.center as maplibregl.LngLat).lat) < 0.05 &&
+    map.getBearing() === 0 &&
+    map.getPitch() === 0;
+}
+
 /** 追従中の表示範囲。速報がすべて終わったら全国に戻す。 */
 function followView(duration: number) {
   if (!map) return;
@@ -168,7 +186,10 @@ onMounted(() => {
   map.on("movestart", (e) => {
     if (e.originalEvent) follow.value = false;
   });
+  map.on("moveend", updateAtHome);
+  map.on("resize", updateAtHome);
   map.on("load", () => {
+    updateAtHome();
     render();
     renderEew();
   });
@@ -196,7 +217,7 @@ onBeforeUnmount(() => {
       <span class="text-lg font-semibold tabular-nums leading-none">{{ store.timeLabel ?? "取得中…" }}</span>
       <span v-if="store.timeLabel && stale" class="text-xs text-red-300">更新が止まっています</span>
     </div>
-      <RemoteIslandsMap :points="store.points" />
+      <RemoteIslandsMap v-show="atHome" :points="store.points" />
     </div>
     <button
       v-if="eew.mappable.length"
@@ -211,7 +232,7 @@ onBeforeUnmount(() => {
       <Focus class="size-[18px]" aria-hidden="true" />
     </button>
     <!-- 横長の凡例。縦に長いと地図の左下を大きく覆うため -->
-    <div class="absolute bottom-8 left-3 w-64 rounded-lg bg-slate-900/90 px-3 py-2 text-xs text-slate-200 shadow-lg backdrop-blur">
+    <div v-if="sources.settings.show_legend" class="absolute bottom-8 left-3 w-64 rounded-lg bg-slate-900/90 px-3 py-2 text-xs text-slate-200 shadow-lg backdrop-blur">
       <ul v-if="eew.mappable.length" class="mb-2 space-y-1 border-b border-white/10 pb-2">
         <li class="flex items-center gap-2"><span class="inline-block h-0.5 w-5 bg-blue-500" />P波(初期微動)の到達予想</li>
         <li class="flex items-center gap-2"><span class="inline-block h-0.5 w-5 bg-red-500" />S波(主要動)の到達予想</li>

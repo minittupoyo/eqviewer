@@ -26,6 +26,7 @@ const token = ref("");
 const kmoniAlways = ref(false);
 const closeToTray = ref(true);
 const focusOnEew = ref(true);
+const showLegend = ref(true);
 const soundEnabled = ref(true);
 const soundVolume = ref(70);
 const homeLat = ref("");
@@ -40,6 +41,7 @@ watch(open, (o) => {
   kmoniAlways.value = store.settings.kmoni_always;
   closeToTray.value = store.settings.close_to_tray;
   focusOnEew.value = store.settings.focus_on_eew;
+  showLegend.value = store.settings.show_legend;
   soundEnabled.value = store.settings.sound_enabled;
   soundVolume.value = store.settings.sound_volume;
   homeLat.value = store.settings.home_lat?.toString() ?? "";
@@ -67,6 +69,7 @@ async function save() {
       kmoni_always: kmoniAlways.value,
       close_to_tray: closeToTray.value,
       focus_on_eew: focusOnEew.value,
+      show_legend: showLegend.value,
       sound_enabled: soundEnabled.value,
       sound_volume: soundVolume.value,
       home_lat: lat,
@@ -130,6 +133,13 @@ async function save() {
             <p class="text-xs text-muted-foreground">予報のみのときは通知だけで、ウィンドウは動きません</p>
           </div>
           <Switch id="focus-on-eew" v-model="focusOnEew" />
+        </div>
+        <div class="flex items-center justify-between gap-4">
+          <div class="flex flex-col gap-1">
+            <Label for="show-legend">地図の凡例を表示する</Label>
+            <p class="text-xs text-muted-foreground">震度の色と、P波・S波の線の説明を地図の左下に出します</p>
+          </div>
+          <Switch id="show-legend" v-model="showLegend" />
         </div>
         <div class="space-y-2">
           <div class="flex items-center justify-between gap-4">

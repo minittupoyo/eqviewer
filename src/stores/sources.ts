@@ -14,6 +14,7 @@ export interface Settings {
   kmoni_always: boolean;
   close_to_tray: boolean;
   focus_on_eew: boolean;
+  show_legend: boolean;
   sound_enabled: boolean;
   sound_volume: number;
   home_lat: number | null;
@@ -28,7 +29,7 @@ export const SOURCE_LABEL: Record<string, string> = {
 
 export const useSourcesStore = defineStore("sources", () => {
   const status = ref<Record<string, SourceState>>({});
-  const settings = ref<Settings>({ axis_enabled: false, axis_token: "", kmoni_always: false, close_to_tray: true, focus_on_eew: true, sound_enabled: true, sound_volume: 70, home_lat: null, home_lon: null });
+  const settings = ref<Settings>({ axis_enabled: false, axis_token: "", kmoni_always: false, close_to_tray: true, focus_on_eew: true, show_legend: true, sound_enabled: true, sound_volume: 70, home_lat: null, home_lon: null });
 
   async function start() {
     status.value = await invoke("source_status");
