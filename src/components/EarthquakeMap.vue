@@ -13,7 +13,7 @@ import {
   type AreaCollection,
   type CityCollection,
 } from "@/lib/map";
-import { areaOverlay, buildStyle, epicenterLayers } from "@/lib/mapStyle";
+import { areaOverlay, buildStyle, epicenterLayers, registerEpicenterIcon } from "@/lib/mapStyle";
 import { ResetViewControl } from "@/lib/mapControls";
 
 const props = defineProps<{ eq: Earthquake }>();
@@ -85,6 +85,7 @@ onMounted(async () => {
       layers: [...areaOverlay.layers, ...epicenterLayers("epicenter")],
     }),
   });
+  registerEpicenterIcon(map);
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
   map.addControl(new ResetViewControl(() => fit(400)), "top-right");
   map.addControl(

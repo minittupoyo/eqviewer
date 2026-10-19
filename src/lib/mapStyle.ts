@@ -1,5 +1,6 @@
 import type {
   ExpressionSpecification,
+  Map as MapLibreMap,
   LayerSpecification,
   SourceSpecification,
   StyleSpecification,
@@ -42,11 +43,42 @@ export function buildStyle(
 
 export const emptyCollection = { type: "FeatureCollection" as const, features: [] };
 
-/** 震央マーカー(白縁つき赤丸)のレイヤー定義 */
+const EPICENTER_ICON = "epicenter-x";
+
+/** 震央マーカー(白縁つき赤い×)のレイヤー定義。画像は `registerEpicenterIcon` で登録する。 */
 export const epicenterLayers = (source: string): LayerSpecification[] => [
-  { id: `${source}-halo`, type: "circle", source, paint: { "circle-radius": 9, "circle-color": "#ffffff" } },
-  { id: `${source}-dot`, type: "circle", source, paint: { "circle-radius": 6, "circle-color": "#dc2626" } },
+  {
+    id: `${source}-x`,
+    type: "symbol",
+    source,
+    layout: { "icon-image": EPICENTER_ICON, "icon-size": 1, "icon-allow-overlap": true, "icon-ignore-placement": true },
+  },
 ];
+
+/** 震央の×印を、地図が必要としたときに描いて登録する */
+export function registerEpicenterIcon(map: MapLibreMap) {
+  map.on("styleimagemissing", (e) => {
+    if (e.id !== EPICENTER_ICON || map.hasImage(EPICENTER_ICON)) return;
+    const ratio = 2;
+    const size = 28 * ratio;
+    const c = document.createElement("canvas");
+    c.width = c.height = size;
+    const g = c.getContext("2d")!;
+    const m = 6 * ratio;
+    g.lineCap = "round";
+    for (const [width, color] of [[7 * ratio, "#ffffff"], [3.5 * ratio, "#dc2626"]] as const) {
+      g.lineWidth = width;
+      g.strokeStyle = color;
+      g.beginPath();
+      g.moveTo(m, m);
+      g.lineTo(size - m, size - m);
+      g.moveTo(size - m, m);
+      g.lineTo(m, size - m);
+      g.stroke();
+    }
+    map.addImage(EPICENTER_ICON, g.getImageData(0, 0, size, size), { pixelRatio: ratio });
+  });
+}
 
 /** 震度速報の地域(細分区域)の色付け。`feature-state.scale` は地域名のキーで設定する。 */
 export const areaOverlay: { sources: Record<string, SourceSpecification>; layers: LayerSpecification[] } = {

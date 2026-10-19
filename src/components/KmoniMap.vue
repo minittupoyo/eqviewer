@@ -6,7 +6,7 @@ import { useKmoniStore } from "@/stores/kmoni";
 import { useEewStore } from "@/stores/eew";
 import EewPanel from "@/components/EewPanel.vue";
 import RemoteIslandsMap from "@/components/RemoteIslandsMap.vue";
-import { buildStyle, emptyCollection, epicenterLayers } from "@/lib/mapStyle";
+import { buildStyle, emptyCollection, epicenterLayers, registerEpicenterIcon } from "@/lib/mapStyle";
 import { JAPAN_BOUNDS, JAPAN_PADDING, ResetViewControl, fitJapan } from "@/lib/mapControls";
 import { circle, radiusAt } from "@/lib/wave";
 import { KMONI_LEGEND_GRADIENT, KMONI_STALE_MS, kmoniOverlay } from "@/lib/kmoniLayer";
@@ -124,6 +124,7 @@ onMounted(() => {
       ],
     }),
   });
+  registerEpicenterIcon(map);
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
   map.addControl(new ResetViewControl(() => resetView(400)), "top-right");
   map.addControl(
