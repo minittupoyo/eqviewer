@@ -207,7 +207,6 @@ onBeforeUnmount(() => {
   <div class="relative h-full w-full">
     <div ref="el" class="h-full w-full" />
     <div class="absolute left-3 top-3 flex flex-col items-start gap-2">
-      <EewPanel />
       <div class="flex items-center gap-3 rounded-lg bg-slate-900/90 px-3 py-2 text-white shadow-lg backdrop-blur">
       <span
         class="size-2 rounded-full"
@@ -217,6 +216,7 @@ onBeforeUnmount(() => {
       <span class="text-lg font-semibold tabular-nums leading-none">{{ store.timeLabel ?? "取得中…" }}</span>
       <span v-if="store.timeLabel && stale" class="text-xs text-red-300">更新が止まっています</span>
     </div>
+      <EewPanel />
       <RemoteIslandsMap v-show="atHome" :points="store.points" />
     </div>
     <button
