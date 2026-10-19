@@ -1,19 +1,16 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { Activity, List } from "@lucide/vue";
-import { useEewStore } from "@/stores/eew";
 import { useKmoniStore } from "@/stores/kmoni";
 import { SOURCE_LABEL, useSourcesStore, type SourceState } from "@/stores/sources";
 import { useClockStore } from "@/stores/clock";
 import SettingsDialog from "@/components/SettingsDialog.vue";
 
-const eew = useEewStore();
 const kmoni = useKmoniStore();
 const sources = useSourcesStore();
 const clock = useClockStore();
 
-/** EEWの地図を出している間は、どちらの項目も選択中にしない(右側はEEWの地図だから) */
-const current = computed(() => (eew.showMap ? null : kmoni.viewing ? "kmoni" : "quake"));
+const current = computed(() => (kmoni.viewing ? "kmoni" : "quake"));
 
 const items = [
   { id: "kmoni", label: "強震モニタ", icon: Activity },
@@ -22,7 +19,6 @@ const items = [
 
 function show(id: (typeof items)[number]["id"]) {
   kmoni.setViewing(id === "kmoni");
-  eew.focus = false;
 }
 
 /** ずれが1秒以上あるときだけ知らせる(到達円の精度に効くため)。未測定なら補正できていない旨を示す。 */

@@ -1,16 +1,13 @@
 <script setup lang="ts">
 import { useHistoryStore } from "@/stores/history";
-import { useEewStore } from "@/stores/eew";
 import { formatTime, scaleClass, scaleLabel } from "@/lib/earthquake";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const store = useHistoryStore();
-const eew = useEewStore();
 
 function select(id: string) {
   store.selectedId = id;
-  eew.focus = false;
 }
 </script>
 

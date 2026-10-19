@@ -7,6 +7,7 @@ import type { Curve } from "@/lib/wave";
 import { arrivalTime, distanceKm } from "@/lib/wave";
 import { playEewSound, soundFor } from "@/lib/sound";
 import { useClockStore } from "@/stores/clock";
+import { useKmoniStore } from "@/stores/kmoni";
 import { useSourcesStore } from "@/stores/sources";
 
 /** バックエンドの保持期間(5分)と揃える */
@@ -23,8 +24,6 @@ export const useEewStore = defineStore("eew", () => {
   const now = ref(Date.now());
   /** 時計ずれを補正した現在時刻(ms)。地震の発生時刻からの経過時間の計算に使う */
   const correctedNow = computed(() => now.value + (clock.offsetMs ?? 0));
-  /** true: EEW地図を表示 / false: 履歴の詳細を表示 */
-  const focus = ref(true);
   const curves = ref(new Map<number, Curve>());
   const loading = new Set<number>();
 
@@ -37,12 +36,12 @@ export const useEewStore = defineStore("eew", () => {
   const mappable = computed(() =>
     active.value.filter((e) => !e.is_cancel && e.latitude != null && e.longitude != null),
   );
-  const showMap = computed(() => focus.value && mappable.value.length > 0);
 
   const depthKey = (e: Eew) => Math.round(e.depth_km ?? DEFAULT_DEPTH_KM);
   const curveFor = (e: Eew) => curves.value.get(depthKey(e));
 
   const sources = useSourcesStore();
+  const kmoni = useKmoniStore();
   /** 自宅地点(設定済みのときだけ) */
   const home = computed(() => {
     const { home_lat: lat, home_lon: lon } = sources.settings;
@@ -92,11 +91,12 @@ export const useEewStore = defineStore("eew", () => {
     await listen<Eew[]>("eew-updated", (ev) => {
       const sound = soundFor(all.value, ev.payload);
       all.value = ev.payload;
-      focus.value = true;
+      // EEWは強震モニタの画面に重ねて出す。速報が来たらその画面に切り替える
+      kmoni.setViewing(true);
       const { sound_enabled, sound_volume } = sources.settings;
       if (sound && sound_enabled) playEewSound(sound, sound_volume);
     });
   }
 
-  return { active, mappable, showMap, focus, now, correctedNow, curveFor, home, homeArrival, start };
+  return { active, mappable, now, correctedNow, curveFor, home, homeArrival, start };
 });

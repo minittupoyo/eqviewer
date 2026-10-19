@@ -23,12 +23,10 @@ const tone = (e: Eew) =>
 
 <template>
   <section v-if="store.active.length" class="w-72 space-y-2" aria-live="assertive">
-    <button
+    <div
       v-for="e in store.active"
       :key="e.event_id"
-      type="button"
       class="block w-full overflow-hidden rounded-lg bg-slate-900/95 text-left text-white shadow-lg backdrop-blur"
-      @click="store.focus = true"
     >
       <div class="flex items-center justify-between px-3 py-1 text-xs font-semibold" :class="tone(e)">
         <span>緊急地震速報({{ kind(e) }}){{ e.is_training ? "【訓練】" : "" }}</span>
@@ -57,6 +55,6 @@ const tone = (e: Eew) =>
         </div>
       </div>
       <p v-else class="px-3 py-2 text-xs text-slate-300">この速報は取り消されました。</p>
-    </button>
+    </div>
   </section>
 </template>

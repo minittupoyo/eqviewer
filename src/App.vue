@@ -2,14 +2,12 @@
 import { onMounted } from "vue";
 import { useHistoryStore } from "@/stores/history";
 import { useEewStore } from "@/stores/eew";
-import EewPanel from "@/components/EewPanel.vue";
 import EarthquakeList from "@/components/EarthquakeList.vue";
 import { useSourcesStore } from "@/stores/sources";
 import AppHeader from "@/components/AppHeader.vue";
 import KmoniMap from "@/components/KmoniMap.vue";
 import { useKmoniStore } from "@/stores/kmoni";
 import { useClockStore } from "@/stores/clock";
-import EewMap from "@/components/EewMap.vue";
 import EarthquakeDetail from "@/components/EarthquakeDetail.vue";
 
 const store = useHistoryStore();
@@ -38,13 +36,10 @@ onMounted(() => {
         <aside v-if="!kmoni.viewing" class="min-h-0 border-r"><EarthquakeList /></aside>
         <!-- 地図は切り替えのたびに作り直さず保持する(日本の形の読み込みが重いため) -->
         <KeepAlive>
-          <EewMap v-if="eew.showMap" />
-          <KmoniMap v-else-if="kmoni.viewing" />
+          <KmoniMap v-if="kmoni.viewing" />
           <EarthquakeDetail v-else-if="store.selected" :eq="store.selected" />
         </KeepAlive>
-        <!-- 地図に出せない速報(取消・震源不明)や、履歴の画面でも見落とさないよう、地図のない表示ではここに出す -->
-        <EewPanel v-if="!eew.showMap && !kmoni.viewing" class="absolute left-3 top-3 z-10" />
-        <p v-if="!eew.showMap && !kmoni.viewing && !store.selected" class="p-4 text-sm text-muted-foreground">履歴を取得しています…</p>
+        <p v-if="!kmoni.viewing && !store.selected" class="p-4 text-sm text-muted-foreground">履歴を取得しています…</p>
       </main>
     </div>
   </div>
