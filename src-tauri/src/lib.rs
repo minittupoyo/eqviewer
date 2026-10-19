@@ -155,6 +155,8 @@ pub fn run() {
             window::bring_to_front(app)
         }))
         .plugin(tauri_plugin_notification::init())
+        // ウィンドウの大きさ・位置・最大化を記憶し、次回の起動で復元する
+        .plugin(tauri_plugin_window_state::Builder::default().build())
         .on_window_event(window::on_window_event)
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
