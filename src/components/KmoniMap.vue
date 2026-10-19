@@ -7,7 +7,7 @@ import { useEewStore } from "@/stores/eew";
 import { useSourcesStore } from "@/stores/sources";
 import EewPanel from "@/components/EewPanel.vue";
 import RemoteIslandsMap from "@/components/RemoteIslandsMap.vue";
-import { buildStyle, emptyCollection, epicenterLayers, registerEpicenterIcon } from "@/lib/mapStyle";
+import { buildStyle, emptyCollection, epicenterLayers, homeLayers, registerMapIcons } from "@/lib/mapStyle";
 import { JAPAN_BOUNDS, JAPAN_PADDING, ResetViewControl, fitJapan } from "@/lib/mapControls";
 import { Focus } from "@lucide/vue";
 import { circle, circlesBounds, radiusAt } from "@/lib/wave";
@@ -71,10 +71,10 @@ const shapes = computed(() => {
   return { epi, p, s, extents };
 });
 
-/** 自宅地点(設定済みのときだけ) */
+/** 自宅地点(設定済みで、緊急地震速報が出ているときだけ) */
 const homePoint = computed<Fc>(() => ({
   type: "FeatureCollection",
-  features: eew.home
+  features: eew.home && eew.mappable.length
     ? [{ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: [eew.home.lon, eew.home.lat] } }]
     : [],
 }));
@@ -164,16 +164,11 @@ onMounted(() => {
         { id: "eew-s-line", type: "line", source: "eew-s", paint: { "line-color": "#dc2626", "line-width": 2.5 } },
         { id: "eew-p-line", type: "line", source: "eew-p", paint: { "line-color": "#2563eb", "line-width": 2 } },
         ...epicenterLayers("eew-epicenter"),
-        {
-          id: "eew-home",
-          type: "circle",
-          source: "eew-home",
-          paint: { "circle-radius": 6, "circle-color": "#16a34a", "circle-stroke-color": "#fff", "circle-stroke-width": 2 },
-        },
+        ...homeLayers("eew-home"),
       ],
     }),
   });
-  registerEpicenterIcon(map);
+  registerMapIcons(map);
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
   map.addControl(new ResetViewControl(() => resetView(400)), "top-right");
   map.addControl(
@@ -237,7 +232,7 @@ onBeforeUnmount(() => {
         <li class="flex items-center gap-2"><span class="inline-block h-0.5 w-5 bg-blue-500" />P波(初期微動)の到達予想</li>
         <li class="flex items-center gap-2"><span class="inline-block h-0.5 w-5 bg-red-500" />S波(主要動)の到達予想</li>
         <li v-if="eew.home" class="flex items-center gap-2">
-          <span class="inline-block size-2.5 rounded-full border border-white bg-green-600" />自宅地点
+          <svg viewBox="0 0 26 26" class="size-3.5" aria-hidden="true"><path d="M13 3 23 12h-3v10H6V12H3Z" fill="#16a34a" stroke="#fff" stroke-width="2.5" stroke-linejoin="round" paint-order="stroke" /></svg>自宅地点
         </li>
       </ul>
       <div class="mb-1 text-[0.7rem] text-slate-400">リアルタイム震度</div>

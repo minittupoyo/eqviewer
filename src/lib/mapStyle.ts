@@ -55,28 +55,65 @@ export const epicenterLayers = (source: string): LayerSpecification[] => [
   },
 ];
 
-/** 震央の×印を、地図が必要としたときに描いて登録する */
-export function registerEpicenterIcon(map: MapLibreMap) {
+const HOME_ICON = "home-house";
+
+/** 自宅地点のレイヤー定義。観測点(丸)と見間違えないよう、家の形にする。 */
+export const homeLayers = (source: string): LayerSpecification[] => [
+  {
+    id: `${source}-house`,
+    type: "symbol",
+    source,
+    layout: { "icon-image": HOME_ICON, "icon-allow-overlap": true, "icon-ignore-placement": true },
+  },
+];
+
+const ICON_RATIO = 2;
+
+/** 白縁つきの図形を描いた画像を、地図が必要としたときに登録する */
+function registerIcon(map: MapLibreMap, id: string, size: number, draw: (g: CanvasRenderingContext2D, px: number) => void) {
   map.on("styleimagemissing", (e) => {
-    if (e.id !== EPICENTER_ICON || map.hasImage(EPICENTER_ICON)) return;
-    const ratio = 2;
-    const size = 28 * ratio;
+    if (e.id !== id || map.hasImage(id)) return;
+    const px = size * ICON_RATIO;
     const c = document.createElement("canvas");
-    c.width = c.height = size;
+    c.width = c.height = px;
     const g = c.getContext("2d")!;
-    const m = 6 * ratio;
-    g.lineCap = "round";
-    for (const [width, color] of [[7 * ratio, "#ffffff"], [3.5 * ratio, "#dc2626"]] as const) {
+    g.lineCap = g.lineJoin = "round";
+    draw(g, px);
+    map.addImage(id, g.getImageData(0, 0, px, px), { pixelRatio: ICON_RATIO });
+  });
+}
+
+/** 地図で使うアイコン(震央の×、自宅の家)を登録する */
+export function registerMapIcons(map: MapLibreMap) {
+  registerIcon(map, EPICENTER_ICON, 28, (g, px) => {
+    const m = px * (6 / 28);
+    for (const [width, color] of [[px / 4, "#ffffff"], [px / 8, "#dc2626"]] as const) {
       g.lineWidth = width;
       g.strokeStyle = color;
       g.beginPath();
       g.moveTo(m, m);
-      g.lineTo(size - m, size - m);
-      g.moveTo(size - m, m);
-      g.lineTo(m, size - m);
+      g.lineTo(px - m, px - m);
+      g.moveTo(px - m, m);
+      g.lineTo(m, px - m);
       g.stroke();
     }
-    map.addImage(EPICENTER_ICON, g.getImageData(0, 0, size, size), { pixelRatio: ratio });
+  });
+  registerIcon(map, HOME_ICON, 26, (g, px) => {
+    const u = px / 26;
+    g.beginPath();
+    g.moveTo(13 * u, 3 * u);
+    g.lineTo(23 * u, 12 * u);
+    g.lineTo(20 * u, 12 * u);
+    g.lineTo(20 * u, 22 * u);
+    g.lineTo(6 * u, 22 * u);
+    g.lineTo(6 * u, 12 * u);
+    g.lineTo(3 * u, 12 * u);
+    g.closePath();
+    g.lineWidth = 3.5 * u;
+    g.strokeStyle = "#ffffff";
+    g.stroke();
+    g.fillStyle = "#16a34a";
+    g.fill();
   });
 }
 
