@@ -8,7 +8,8 @@ import EewPanel from "@/components/EewPanel.vue";
 import RemoteIslandsMap from "@/components/RemoteIslandsMap.vue";
 import { buildStyle, emptyCollection, epicenterLayers, registerEpicenterIcon } from "@/lib/mapStyle";
 import { JAPAN_BOUNDS, JAPAN_PADDING, ResetViewControl, fitJapan } from "@/lib/mapControls";
-import { circle, radiusAt } from "@/lib/wave";
+import { Focus } from "@lucide/vue";
+import { circle, circlesBounds, radiusAt } from "@/lib/wave";
 import { KMONI_LEGEND_GRADIENT, KMONI_STALE_MS, kmoniOverlay } from "@/lib/kmoniLayer";
 
 const store = useKmoniStore();
@@ -16,6 +17,10 @@ const eew = useEewStore();
 const el = ref<HTMLDivElement>();
 let map: maplibregl.Map | undefined;
 let fittedEvent: string | undefined;
+/** 予測円に追従して表示範囲を変えるか。地図を自分で動かすと止まり、新しい地震かボタンで再開する。 */
+const follow = ref(true);
+/** 追従の最小の半径(km)。発生直後の小さな円に寄りすぎないようにする */
+const FOLLOW_MIN_KM = 60;
 
 const now = ref(Date.now());
 const timer = setInterval(() => (now.value = Date.now()), 1000);
@@ -28,6 +33,8 @@ const shapes = computed(() => {
   const epi: Fc = { type: "FeatureCollection", features: [] };
   const p: Fc = { type: "FeatureCollection", features: [] };
   const s: Fc = { type: "FeatureCollection", features: [] };
+  /** 追従の範囲に使う円。P波の円がまだ無ければ最小半径の円 */
+  const extents: { lon: number; lat: number; rKm: number }[] = [];
   for (const e of eew.mappable) {
     const [lon, lat] = [e.longitude!, e.latitude!];
     epi.features.push({
@@ -36,10 +43,14 @@ const shapes = computed(() => {
       geometry: { type: "Point", coordinates: [lon, lat] },
     });
     const curve = eew.curveFor(e);
-    if (!curve) continue;
+    if (!curve) {
+      extents.push({ lon, lat, rKm: 0 });
+      continue;
+    }
     const t = (eew.correctedNow - new Date(e.origin_time).getTime()) / 1000;
     const rp = radiusAt(curve.p, curve.dist_km, t);
     const rs = radiusAt(curve.s, curve.dist_km, t);
+    extents.push({ lon, lat, rKm: rp ?? 0 });
     if (rp != null && rp > 0)
       p.features.push({
         type: "Feature",
@@ -53,7 +64,7 @@ const shapes = computed(() => {
         geometry: { type: "Polygon", coordinates: [circle(lon, lat, rs)] },
       });
   }
-  return { epi, p, s };
+  return { epi, p, s, extents };
 });
 
 /** 自宅地点(設定済みのときだけ) */
@@ -76,23 +87,43 @@ function renderEew() {
   (map.getSource("eew-p") as maplibregl.GeoJSONSource).setData(p);
   (map.getSource("eew-s") as maplibregl.GeoJSONSource).setData(s);
   (map.getSource("eew-home") as maplibregl.GeoJSONSource).setData(homePoint.value);
-  // 新しい地震が来たときだけ震央へ移動する(以降はユーザー操作を尊重)
+  // 新しい地震が来たら追従を再開する。複数あるときは、すべての円が収まる範囲にする
   const latest = eew.mappable[0];
   if (latest && latest.event_id !== fittedEvent) {
     fittedEvent = latest.event_id;
-    resetView(0);
+    follow.value = true;
   }
+  if (follow.value) followView(0);
 }
 
-/** 最新の震源を中心にした表示に戻す(速報がなければ全国)。回転・傾きも戻す。 */
-function resetView(duration: number) {
-  const latest = eew.mappable[0];
+/** 追従中の表示範囲。速報がすべて終わったら全国に戻す。 */
+function followView(duration: number) {
   if (!map) return;
-  if (!latest) {
-    fitJapan(map, duration);
+  const bounds = circlesBounds(shapes.value.extents, FOLLOW_MIN_KM);
+  if (!bounds) {
+    if (fittedEvent) fitJapan(map, 400);
+    fittedEvent = undefined;
     return;
   }
-  map.easeTo({ center: [latest.longitude!, latest.latitude!], zoom: 6, bearing: 0, pitch: 0, duration });
+  // 左上の情報カードに円が隠れないよう、左を広く空ける(小さい窓では幅の3割まで)
+  const { clientWidth: w, clientHeight: h } = map.getContainer();
+  const padding = { top: Math.min(60, h * 0.1), bottom: Math.min(60, h * 0.1), right: 60, left: Math.min(340, w * 0.3) };
+  map.fitBounds(bounds, { padding, maxZoom: 8, duration, bearing: 0, pitch: 0 });
+}
+
+/** 表示のリセット。速報があれば追従を再開し、なければ全国に戻す。 */
+function resetView(duration: number) {
+  if (!map) return;
+  if (eew.mappable.length) {
+    follow.value = true;
+    followView(duration);
+  } else fitJapan(map, duration);
+}
+
+/** ボタンで追従を切り替える。入れたときはすぐ合わせる。 */
+function toggleFollow() {
+  follow.value = !follow.value;
+  if (follow.value) followView(400);
 }
 
 onMounted(() => {
@@ -133,6 +164,10 @@ onMounted(() => {
       customAttribution: "強震モニタ(防災科研)・気象庁・Natural Earth(走時表: JMA2001)",
     }),
   );
+  // ユーザー自身の操作(originalEventがある)で動かしたら、追従をやめる
+  map.on("movestart", (e) => {
+    if (e.originalEvent) follow.value = false;
+  });
   map.on("load", () => {
     render();
     renderEew();
@@ -163,6 +198,18 @@ onBeforeUnmount(() => {
     </div>
       <RemoteIslandsMap :points="store.points" />
     </div>
+    <button
+      v-if="eew.mappable.length"
+      type="button"
+      class="absolute right-[10px] top-[118px] flex size-[29px] items-center justify-center rounded shadow"
+      :class="follow ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 hover:bg-slate-100'"
+      :aria-pressed="follow"
+      title="予測円に合わせて自動でズーム"
+      aria-label="予測円に合わせて自動でズーム"
+      @click="toggleFollow"
+    >
+      <Focus class="size-[18px]" aria-hidden="true" />
+    </button>
     <!-- 横長の凡例。縦に長いと地図の左下を大きく覆うため -->
     <div class="absolute bottom-8 left-3 w-64 rounded-lg bg-slate-900/90 px-3 py-2 text-xs text-slate-200 shadow-lg backdrop-blur">
       <ul v-if="eew.mappable.length" class="mb-2 space-y-1 border-b border-white/10 pb-2">

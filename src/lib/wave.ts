@@ -44,6 +44,22 @@ export function circle(lon: number, lat: number, rKm: number, steps = 90): [numb
   return ring;
 }
 
+/**
+ * 複数の円がすべて収まる範囲 [西, 南], [東, 北]。半径は `minKm` 未満なら `minKm` に揃える
+ * (発生直後に円が小さすぎて拡大しすぎるのを防ぐ)。円がなければ null。
+ */
+export function circlesBounds(
+  circles: { lon: number; lat: number; rKm: number }[],
+  minKm: number,
+): [[number, number], [number, number]] | null {
+  let w = Infinity, s = Infinity, e = -Infinity, n = -Infinity;
+  for (const c of circles)
+    for (const [lo, la] of circle(c.lon, c.lat, Math.max(c.rKm, minKm), 36)) {
+      w = Math.min(w, lo); e = Math.max(e, lo); s = Math.min(s, la); n = Math.max(n, la);
+    }
+  return circles.length ? [[w, s], [e, n]] : null;
+}
+
 /** 2点の大円距離(km) */
 export function distanceKm(lon1: number, lat1: number, lon2: number, lat2: number): number {
   const rad = Math.PI / 180;

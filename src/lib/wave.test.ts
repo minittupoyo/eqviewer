@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { arrivalTime, circle, distanceKm, radiusAt } from "./wave";
+import { arrivalTime, circle, circlesBounds, distanceKm, radiusAt } from "./wave";
 
 describe("radiusAt", () => {
   const dist = [0, 10, 20];
@@ -58,5 +58,30 @@ describe("distanceKm", () => {
     // 東京〜大阪は約400km
     expect(distanceKm(139.69, 35.69, 135.5, 34.69)).toBeGreaterThan(390);
     expect(distanceKm(139.69, 35.69, 135.5, 34.69)).toBeLessThan(410);
+  });
+});
+
+describe("circlesBounds", () => {
+  it("is null without circles", () => {
+    expect(circlesBounds([], 50)).toBeNull();
+  });
+
+  it("raises tiny radii to the minimum", () => {
+    const [[w], [e]] = circlesBounds([{ lon: 140, lat: 35, rKm: 0 }], 100)!;
+    expect(e - w).toBeGreaterThan(1.5);
+  });
+
+  it("covers every circle", () => {
+    const [[w, s], [e, n]] = circlesBounds(
+      [
+        { lon: 130, lat: 33, rKm: 100 },
+        { lon: 142, lat: 43, rKm: 100 },
+      ],
+      50,
+    )!;
+    expect(w).toBeLessThan(130);
+    expect(e).toBeGreaterThan(142);
+    expect(s).toBeLessThan(33);
+    expect(n).toBeGreaterThan(43);
   });
 });
